@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ảnh → Excel - AI Nhanh</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        .api-key-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f5f7ff 0%, #fef5ff 100%);
+            border-radius: 16px;
+            border: 2px solid #667eea;
+        }
+
+        .api-key-section h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .api-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .api-key-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .api-key-hint {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .api-key-hint a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .api-key-hint a:hover {
+            text-decoration: underline;
+        }
+
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .api-status.saved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .api-status.missing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 16px;
+            padding: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f5f7ff 0%, #fef5ff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #f0f4ff 0%, #fce8ff 100%);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.drag-over {
+            border-color: #764ba2;
+            background: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-zone.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-section {
+            margin-top: 2rem;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 2px solid #e5e5e5;
+            margin-bottom: 1.5rem;
+            animation: zoomIn 0.4s ease-out;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, #757575 0%, #616161 100%);
+            box-shadow: 0 4px 15px rgba(97, 97, 97, 0.4);
+        }
+
+        .button-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .status-message {
+            text-align: center;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 500;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .data-preview {
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .data-preview h3 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            color: #333;
+            white-space: pre-wrap;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem;
+            }
+            
+            .upload-zone {
+                padding: 2rem 1rem;
+            }
+
+            .api-input-group {
+                flex-direction: column;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1 class="title">🖼️ Ảnh → Excel AI</h1>
+            <p class="subtitle">Chuyển đổi siêu nhanh với Claude AI</p>
+            <span class="badge">⚡ Nhanh như chat - 2-3 giây</span>
+        </div>
+
+        <div class="main-content">
+            <div class="api-key-section">
+                <h3>
+                    🔑 API Key 
+                    <span id="apiStatus"></span>
+                </h3>
+                <div class="api-input-group">
+                    <input 
+                        type="password" 
+                        id="apiKeyInput" 
+                        class="api-key-input" 
+                        placeholder="Nhập Anthropic API Key của bạn (sk-ant-...)"
+                    />
+                    <button class="button button-secondary" onclick="saveApiKey()">Lưu</button>
+                </div>
+                <div class="api-key-hint">
+                    💡 Lấy API key miễn phí tại: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> 
+                    <br>API key chỉ lưu trên trình duyệt của bạn, không gửi đi đâu khác.
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <label for="file-upload" class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text" id="uploadText">
+                        Chọn hoặc kéo thả ảnh vào đây
+                    </div>
+                    <div class="upload-hint">
+                        Hỗ trợ: JPG, PNG, WEBP (tối đa 10MB)
+                    </div>
+                </label>
+                <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    onchange="handleImageUpload(event)"
+                />
+            </div>
+
+            <div id="previewSection" style="display: none;">
+                <img id="previewImage" class="preview-image" alt="Preview" />
+                
+                <div class="button-group">
+                    <button class="button" onclick="processImage()" id="processBtn">
+                        ⚡ Phân tích nhanh (AI)
+                    </button>
+                </div>
+            </div>
+
+            <div id="statusMessage"></div>
+
+            <div id="dataPreview" style="display: none;" class="data-preview">
+                <h3>📊 Dữ liệu đã trích xuất:</h3>
+                <div class="table-container" id="tableContainer"></div>
+                <div class="button-group">
+                    <button class="button button-success" onclick="downloadExcel()">
+                        ⬇️ Tải xuống Excel
+                    </button>
+                    <button class="button" onclick="reset()">
+                        🔄 Thử ảnh khác
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Claude AI • 100% bảo mật, dữ liệu không lưu trữ</p>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let extractedData = null;
+
+        // Check API key on load
+        window.onload = () => {
+            const apiKey = localStorage.getItem('anthropic_api_key');
+            if (apiKey) {
+                document.getElementById('apiKeyInput').value = apiKey;
+                updateApiStatus(true);
+            } else {
+                updateApiStatus(false);
+            }
+        };
+
+        function updateApiStatus(hasSaved) {
+            const statusEl = document.getElementById('apiStatus');
+            if (hasSaved) {
+                statusEl.innerHTML = '<span class="api-status saved">✓ Đã lưu</span>';
+            } else {
+                statusEl.innerHTML = '<span class="api-status missing">⚠ Chưa có API key</span>';
+            }
+        }
+
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showStatus('Vui lòng nhập API key!', 'error');
+                return;
+            }
+            if (!apiKey.startsWith('sk-ant-')) {
+                showStatus('API key không hợp lệ! (phải bắt đầu với sk-ant-)', 'error');
+                return;
+            }
+            localStorage.setItem('anthropic_api_key', apiKey);
+            updateApiStatus(true);
+            showStatus('✅ Đã lưu API key!', 'success');
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('uploadZone');
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus('Ảnh quá lớn! Vui lòng chọn ảnh dưới 10MB.', 'error');
+                return;
+            }
+
+            currentImage = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('previewSection').style.display = 'block';
+                document.getElementById('dataPreview').style.display = 'none';
+                document.getElementById('uploadText').textContent = 'Đổi ảnh khác';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage() {
+            const apiKey = localStorage.getItem('anthropic_api_key');
+            if (!apiKey) {
+                showStatus('⚠️ Vui lòng nhập API key trước!', 'error');
+                return;
+            }
+
+            if (!currentImage) return;
+
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Đang xử lý với AI...';
+            
+            showStatus('⚡ Claude AI đang phân tích ảnh...', 'loading');
+
+            try {
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const base64Image = reader.result.split(',')[1];
+
+                    const response = await fetch('https://api.anthropic.com/v1/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': apiKey,
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify({
+                            model: 'claude-sonnet-4-20250514',
+                            max_tokens: 2000,
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: [
+                                        {
+                                            type: 'image',
+                                            source: {
+                                                type: 'base64',
+                                                media_type: currentImage.type,
+                                                data: base64Image,
+                                            },
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `Phân tích hình ảnh này và trích xuất toàn bộ nội dung thành bảng Excel.
+
+QUAN TRỌNG: Trả về CHỈ một JSON object (không có markdown backticks, không có text giải thích) theo format:
+{
+  "headers": ["Cột 1", "Cột 2", "Cột 3"],
+  "rows": [
+    ["dữ liệu r1c1", "dữ liệu r1c2", "dữ liệu r1c3"],
+    ["dữ liệu r2c1", "dữ liệu r2c2", "dữ liệu r2c3"]
+  ]
+}
+
+Yêu cầu:
+- Giữ nguyên văn bản tiếng Việt và tiếng Anh
+- Với các ô có nhiều dòng, dùng \\n để ngắt dòng
+- Nếu có bảng, tạo headers phù hợp
+- Nếu không có bảng, đặt header là "Nội dung" và mỗi dòng text là một row
+- Chỉ trả về JSON, không thêm bất kỳ text nào khác`,
+                                        },
+                                    ],
+                                },
+                            ],
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error?.message || 'API request failed');
+                    }
+
+                    const data = await response.json();
+                    const content = data.content[0].text;
+                    
+                    // Extract JSON from response
+                    let jsonStr = content.trim();
+                    jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+                    
+                    extractedData = JSON.parse(jsonStr);
+                    displayData(extractedData);
+                    showStatus('✅ Hoàn thành! Siêu nhanh phải không? 😎', 'success');
+                };
+                reader.readAsDataURL(currentImage);
+            } catch (error) {
+                console.error('Error:', error);
+                let errorMsg = 'Lỗi: ' + error.message;
+                if (error.message.includes('authentication') || error.message.includes('api_key')) {
+                    errorMsg = '❌ API key không hợp lệ! Vui lòng kiểm tra lại.';
+                }
+                showStatus(errorMsg, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⚡ Phân tích lại';
+            }
+        }
+
+        function displayData(data) {
+            const container = document.getElementById('tableContainer');
+            
+            let html = '<table>';
+            html += '<thead><tr>';
+            data.headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            html += '<tbody>';
+            data.rows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td>${cell || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            html += '</table>';
+            
+            container.innerHTML = html;
+            document.getElementById('dataPreview').style.display = 'block';
+        }
+
+        function downloadExcel() {
+            if (!extractedData) return;
+
+            const ws = XLSX.utils.aoa_to_sheet([
+                extractedData.headers,
+                ...extractedData.rows,
+            ]);
+
+            // Auto width columns
+            const colWidths = extractedData.headers.map((_, i) => {
+                const maxLen = Math.max(
+                    extractedData.headers[i]?.length || 10,
+                    ...extractedData.rows.map(row => (row[i]?.toString().length || 10))
+                );
+                return { wch: Math.min(maxLen + 2, 60) };
+            });
+            ws['!cols'] = colWidths;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Data');
+            
+            const fileName = 'anh-sang-excel-' + new Date().getTime() + '.xlsx';
+            XLSX.writeFile(wb, fileName);
+
+            showStatus('✅ Đã tải xuống file Excel!', 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            let className = 'status-message ';
+            
+            if (type === 'loading') className += 'status-loading';
+            else if (type === 'success') className += 'status-success';
+            else if (type === 'error') className += 'status-error';
+
+            statusDiv.className = className;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function reset() {
+            currentImage = null;
+            extractedData = null;
+            document.getElementById('file-upload').value = '';
+            document.getElementById('previewSection').style.display = 'none';
+            document.getElementById('dataPreview').style.display = 'none';
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('uploadText').textContent = 'Chọn hoặc kéo thả ảnh vào đây';
+        }
+    </script>
+</body>
+</html>
